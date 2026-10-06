@@ -19,11 +19,17 @@ optional and requires additional configuration (see examples below).
   [grpc.WithInsecure()](https://godoc.org/google.golang.org/grpc#WithInsecure)
   for gRPC.
 - `curve_preferences` (default = []): specify your curve preferences that will
-  be used in an ECDHE handshake, in preference order. Accepted values are:
+  be used in an ECDHE handshake, in preference order. When unset, all accepted
+  values are used, in the order listed below. Accepted values are:
+  - X25519MLKEM768
+  - SecP256r1MLKEM768
+  - SecP384r1MLKEM1024
   - X25519
-  - P521
   - P256
   - P384
+  - P521
+
+  The X25519 mechanisms are not available in FIPS builds.
 
 The following certificate parameters can be configured:
 

@@ -9,10 +9,8 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"maps"
 	"os"
 	"path/filepath"
-	"slices"
 	"sync"
 	"time"
 )
@@ -151,12 +149,11 @@ func (c Config) loadTLSConfig() (*tls.Config, error) {
 		return nil, err
 	}
 
-	allowedCurves := slices.Collect(maps.Values(tlsCurveTypes))
 	curvePreferences := make([]tls.CurveID, 0, len(c.CurvePreferences))
 	for _, curve := range c.CurvePreferences {
-		curveID, ok := tlsCurveTypes[curve]
+		curveID, ok := curveIDForName(curve)
 		if !ok {
-			return nil, fmt.Errorf("invalid curve type: %s. Expected values are %s", curveID, allowedCurves)
+			return nil, fmt.Errorf("invalid curve type: %s. Expected values are %s", curve, allowedCurveNames())
 		}
 		curvePreferences = append(curvePreferences, curveID)
 	}
@@ -165,7 +162,7 @@ func (c Config) loadTLSConfig() (*tls.Config, error) {
 	// the ones we allow. This helps in particular with FIPS builds where not all curves
 	// are allowed.
 	if len(curvePreferences) == 0 {
-		curvePreferences = allowedCurves
+		curvePreferences = allowedCurveIDs()
 	}
 
 	return &tls.Config{

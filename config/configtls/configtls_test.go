@@ -910,7 +910,8 @@ func TestCurvePreferences(t *testing.T) {
 			name:             "invalid-curve",
 			preferences:      []string{"P25223236"},
 			expectedCurveIDs: []tls.CurveID{},
-			expectedErr:      "invalid curve type",
+			// The offending name must be echoed back, not the zero CurveID.
+			expectedErr: "invalid curve type: P25223236",
 		},
 	}
 
@@ -946,6 +947,23 @@ func TestCurvePreferences(t *testing.T) {
 				require.ErrorContains(t, err, test.expectedErr)
 			}
 		})
+	}
+}
+
+// When `curve_preferences` is unset the allowlist is used as-is, so the
+// resulting preference order must be stable across calls. It previously came
+// from map iteration, which Go randomizes.
+func TestCurvePreferencesDefaultIsDeterministic(t *testing.T) {
+	var tlsSetting ClientConfig
+
+	first, err := tlsSetting.LoadTLSConfig(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, allowedCurveIDs(), first.CurvePreferences)
+
+	for range 10 {
+		next, err := tlsSetting.LoadTLSConfig(context.Background())
+		require.NoError(t, err)
+		require.Equal(t, first.CurvePreferences, next.CurvePreferences)
 	}
 }
 
